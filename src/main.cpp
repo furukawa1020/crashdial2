@@ -63,26 +63,26 @@ struct Crack {
 GlassState currentState = NORMAL;
 float destructionLevel = 0.0f;
 std::vector<Crack> cracks;
-std::vector<Particle> particles;
-unsigned long lastActivityTime = 0;
-unsigned long lastStateChangeTime = 0;
-bool wasInDestructiveState = false;
+std::vector<Particle> particles; // 使わないが構造体は残す
+long lastEncoderValue = 0;
 
 // ========== 定数定義 ==========
-const float DESTRUCTION_INCREMENT = 0.015f; // 5倍に増加!もっと割れやすく
-const float RECOVERY_SPEED = 0.001f;
-const unsigned long IDLE_TIMEOUT = 3000; // 3秒に短縮
-const int MAX_CRACKS = 300; // 300本に増加!もっと細かく
-const int MAX_PARTICLES = 200;
+const float DESTRUCTION_INCREMENT = 0.015f; // 割れやすく!
+const float RECOVERY_SPEED = 0.005f; // 逆回転で復元
+const int MAX_CRACKS = 500; // 500本!超細かく
+const int MAX_PARTICLES = 0; // パーティクル無効化
 const int SCREEN_WIDTH = 240;
 const int SCREEN_HEIGHT = 240;
 
 // ========== 音響定義 ==========
-const int SOUND_CRACK = 1500;
-const int SOUND_SHATTER = 2000;
-const int SOUND_SILENCE = 500;
-const int SOUND_REBUILD = 800;
-const int SOUND_RECOVERY = 1200;
+const int SOUND_TINY_CRACK = 1800;
+const int SOUND_SMALL_CRACK = 2200;
+const int SOUND_CRACK = 2600;
+const int SOUND_BIG_CRACK = 3000;
+const int SOUND_SHATTER = 3500;
+const int SOUND_HEAVY_SHATTER = 4000;
+const int SOUND_SILENCE = 600;
+const int SOUND_RECOVERY = 1000;
 
 // ========== 関数プロトタイプ ==========
 void updateState();
@@ -108,8 +108,7 @@ void setup() {
   M5Dial.Display.drawString(subtitle, 120, 140);
   
   delay(2000);
-  lastActivityTime = millis();
-  lastStateChangeTime = millis();
+  lastEncoderValue = M5Dial.Encoder.read();
 }
 
 // ========== メインループ ==========
@@ -117,59 +116,23 @@ void loop() {
   M5Dial.update();
   
   // エンコーダ読み取り
-  static long lastEncoder = 0;
-  long encoderValue = M5Dial.Encoder.read();
-  long delta = abs(encoderValue - lastEncoder);
+  long currentEncoder = M5Dial.Encoder.read();
+  long delta = currentEncoder - lastEncoderValue;
   
   if (delta > 0) {
-    lastActivityTime = millis();
-    
-    // 破壊レベル増加
-    if (currentState != REBUILD && currentState != RECOVERY) {
-      destructionLevel += delta * DESTRUCTION_INCREMENT;
-      if (destructionLevel > 1.0f) destructionLevel = 1.0f;
-    }
-    
-    lastEncoder = encoderValue;
-  }
-  
-  // アイドルタイムアウト処理
-  unsigned long idleTime = millis() - lastActivityTime;
-  if (idleTime > IDLE_TIMEOUT && destructionLevel > 0.0f) {
-    if (currentState != REBUILD && currentState != RECOVERY) {
-      wasInDestructiveState = true;
-    }
-  }
-  
-  // 自動回復
-  if (wasInDestructiveState && idleTime > IDLE_TIMEOUT) {
-    if (currentState == SILENCE || currentState == HEAVY_SHATTER || currentState == SHATTER || 
-        currentState == BIG_CRACK || currentState == CRACK || currentState == SMALL_CRACK) {
-      currentState = REBUILD;
-      playStateSound(REBUILD);
-      lastStateChangeTime = millis();
-      wasInDestructiveState = false;
-    }
-  }
-  
-  if (currentState == REBUILD) {
-    destructionLevel -= RECOVERY_SPEED;
-    if (destructionLevel <= 0.5f) {
-      currentState = RECOVERY;
-      playStateSound(RECOVERY);
-      lastStateChangeTime = millis();
-    }
-  }
-  
-  if (currentState == RECOVERY) {
-    destructionLevel -= RECOVERY_SPEED;
-    if (destructionLevel <= 0.0f) {
+    // 正回転:破壊
+    destructionLevel += delta * DESTRUCTION_INCREMENT;
+    if (destructionLevel > 1.0f) destructionLevel = 1.0f;
+  } else if (delta < 0) {
+    // 逆回転:復元
+    destructionLevel += delta * RECOVERY_SPEED; // deltaは負なので減る
+    if (destructionLevel < 0.0f) {
       destructionLevel = 0.0f;
-      currentState = NORMAL;
       cracks.clear();
-      particles.clear();
     }
   }
+  
+  lastEncoderValue = currentEncoder;
   
   // 状態更新
   updateState();
