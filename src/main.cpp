@@ -65,9 +65,9 @@ std::vector<Particle> particles; // 使わないが構造体は残す
 long lastEncoderValue = 0;
 
 // ========== 定数定義 ==========
-const float DESTRUCTION_INCREMENT = 0.015f; // 割れやすく!
-const float RECOVERY_SPEED = 0.005f; // 逆回転で復元
-const int MAX_CRACKS = 500; // 500本!超細かく
+const float DESTRUCTION_INCREMENT = 0.025f; // さらに割れやすく!
+const float RECOVERY_SPEED = 0.008f; // 逆回転でゆっくり復元
+const int MAX_CRACKS = 800; // 800本!超粉々
 const int MAX_PARTICLES = 0; // パーティクル無効化
 const int SCREEN_WIDTH = 240;
 const int SCREEN_HEIGHT = 240;
