@@ -202,19 +202,19 @@ void updateState() {
 void addCrack(float x, float y, float angle, int generation) {
   if (cracks.size() >= MAX_CRACKS) return;
   
-  // より細かい線に
-  float length = random(15, 40) / (generation + 1.0f);
+  // さらに細かい線に
+  float length = random(10, 35) / (generation + 1.0f);
   float x2 = x + cos(angle) * length;
   float y2 = y + sin(angle) * length;
   
   cracks.push_back(Crack(x, y, x2, y2, generation));
   
-  // より複雑な分岐パターン
-  if (generation < 5 && random(0, 100) > 30) {
-    float branchAngle1 = angle + random(15, 90) / 100.0f;
-    float branchAngle2 = angle - random(15, 90) / 100.0f;
+  // さらに複雑な分岐パターン
+  if (generation < 6 && random(0, 100) > 20) { // 80%で分岐
+    float branchAngle1 = angle + random(10, 90) / 100.0f;
+    float branchAngle2 = angle - random(10, 90) / 100.0f;
     addCrack(x2, y2, branchAngle1, generation + 1);
-    if (random(0, 100) > 40) { // 2本目は60%の確率
+    if (random(0, 100) > 30) { // 70%で2本目
       addCrack(x2, y2, branchAngle2, generation + 1);
     }
   }
