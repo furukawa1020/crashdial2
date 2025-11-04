@@ -164,44 +164,16 @@ void updateState() {
     newState = SILENCE;
   }
   
-  // 状態遷移処理
-  if (newState != currentState && currentState != REBUILD && currentState != RECOVERY) {
-    GlassState oldState = currentState;
+  // 状態遷移時の音
+  if (newState != currentState) {
     currentState = newState;
-    
-    // 全画面にランダムな位置からひび割れを追加!
-    if (currentState >= TINY_CRACK && currentState <= BIG_CRACK) {
-      // ランダムな位置から複数のひび割れを生成
-      int crackCount = (int)currentState + 1; // 状態が進むほど多く
-      for (int i = 0; i < crackCount; i++) {
-        float startX = random(0, SCREEN_WIDTH);
-        float startY = random(0, SCREEN_HEIGHT);
-        float angle = random(0, 628) / 100.0f;
-        addCrack(startX, startY, angle, 0);
-      }
-      playStateSound(CRACK);
-    }
-    else if (currentState == SHATTER) {
-      // 全画面からパーティクル生成
-      createShatterParticles(80);
-      playStateSound(SHATTER);
-    }
-    else if (currentState == HEAVY_SHATTER) {
-      // さらに大量のパーティクル
-      createShatterParticles(100);
-      playStateSound(SHATTER);
-    }
-    else if (currentState == SILENCE) {
-      playStateSound(SILENCE);
-    }
-    
-    lastStateChangeTime = millis();
+    playStateSound(currentState);
   }
   
   // ひび割れ状態では常にランダムにピシッピシッと追加
   if (currentState >= TINY_CRACK && currentState <= BIG_CRACK && cracks.size() < MAX_CRACKS) {
     // 回転するたびにランダムな位置にひび追加
-    if (random(0, 100) > 60) { // 40%の確率でピシッ
+    if (random(0, 100) > 50) { // 50%の確率でピシッ
       float randX = random(0, SCREEN_WIDTH);
       float randY = random(0, SCREEN_HEIGHT);
       float randAngle = random(0, 628) / 100.0f;
@@ -210,11 +182,11 @@ void updateState() {
   }
   
   // 既存のひびから分岐
-  if (currentState >= CRACK && currentState <= BIG_CRACK && cracks.size() < MAX_CRACKS) {
+  if (currentState >= CRACK && currentState <= HEAVY_SHATTER && cracks.size() < MAX_CRACKS) {
     if (cracks.size() > 0 && random(0, 100) > 70) {
       int idx = random(0, cracks.size());
       Crack& c = cracks[idx];
-      if (c.generation < 4) { // 4世代まで
+      if (c.generation < 5) { // 5世代まで
         float midX = (c.x1 + c.x2) / 2.0f;
         float midY = (c.y1 + c.y2) / 2.0f;
         float angle = atan2(c.y2 - c.y1, c.x2 - c.x1) + random(-157, 157) / 100.0f;
@@ -228,19 +200,19 @@ void updateState() {
 void addCrack(float x, float y, float angle, int generation) {
   if (cracks.size() >= MAX_CRACKS) return;
   
-  // ランダムな長さでより自然に
-  float length = random(20, 60) / (generation + 1.0f);
+  // より細かい線に
+  float length = random(15, 40) / (generation + 1.0f);
   float x2 = x + cos(angle) * length;
   float y2 = y + sin(angle) * length;
   
   cracks.push_back(Crack(x, y, x2, y2, generation));
   
   // より複雑な分岐パターン
-  if (generation < 4 && random(0, 100) > 40) {
-    float branchAngle1 = angle + random(20, 120) / 100.0f;
-    float branchAngle2 = angle - random(20, 120) / 100.0f;
+  if (generation < 5 && random(0, 100) > 30) {
+    float branchAngle1 = angle + random(15, 90) / 100.0f;
+    float branchAngle2 = angle - random(15, 90) / 100.0f;
     addCrack(x2, y2, branchAngle1, generation + 1);
-    if (random(0, 100) > 50) { // 2本目は50%の確率
+    if (random(0, 100) > 40) { // 2本目は60%の確率
       addCrack(x2, y2, branchAngle2, generation + 1);
     }
   }
@@ -248,27 +220,23 @@ void addCrack(float x, float y, float angle, int generation) {
 
 // ========== パーティクル生成 ==========
 void createShatterParticles(int count) {
-  for (int i = 0; i < count && particles.size() < MAX_PARTICLES; i++) {
-    float angle = random(0, 628) / 100.0f;
-    float speed = random(10, 50) / 10.0f;
-    // 全画面からランダムに生成
-    float x = random(0, SCREEN_WIDTH);
-    float y = random(0, SCREEN_HEIGHT);
-    particles.push_back(Particle(x, y, angle, speed));
-  }
+  // パーティクル無効化
+  return;
 }
 
 // ========== 音再生 ==========
 void playStateSound(GlassState state) {
   int freq = 0;
-  int duration = 100;
+  int duration = 50; // 短く鋭く
   
   switch (state) {
+    case TINY_CRACK: freq = SOUND_TINY_CRACK; break;
+    case SMALL_CRACK: freq = SOUND_SMALL_CRACK; break;
     case CRACK: freq = SOUND_CRACK; break;
-    case SHATTER: freq = SOUND_SHATTER; duration = 200; break;
-    case SILENCE: freq = SOUND_SILENCE; duration = 300; break;
-    case REBUILD: freq = SOUND_REBUILD; duration = 150; break;
-    case RECOVERY: freq = SOUND_RECOVERY; duration = 150; break;
+    case BIG_CRACK: freq = SOUND_BIG_CRACK; break;
+    case SHATTER: freq = SOUND_SHATTER; duration = 100; break;
+    case HEAVY_SHATTER: freq = SOUND_HEAVY_SHATTER; duration = 150; break;
+    case SILENCE: freq = SOUND_SILENCE; duration = 200; break;
     default: return;
   }
   
