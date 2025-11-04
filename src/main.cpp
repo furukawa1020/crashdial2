@@ -6,7 +6,6 @@
  */
 
 #include <M5Unified.h>
-#include <M5Dial.h>
 #include <vector>
 #include <cmath>
 
@@ -132,10 +131,9 @@ void setup() {
   M5.Speaker.begin();
   M5.Speaker.setVolume(128);
   
-  // エンコーダー初期化
-  M5Dial.begin();
-  encoderValue = M5Dial.Encoder.read();
-  lastEncoderValue = encoderValue;
+  // エンコーダー初期化（M5Dialのロータリーエンコーダー用変数）
+  encoderValue = 0;
+  lastEncoderValue = 0;
   
   // 触覚モーター初期化（M5Dialは内蔵）
   
@@ -182,9 +180,19 @@ void loop() {
 // エンコーダー更新
 // ========================================
 void updateEncoder() {
-  M5Dial.update();
-  encoderValue = M5Dial.Encoder.read();
-  encoderDelta = encoderValue - lastEncoderValue;
+  // M5Dialのロータリーエンコーダー読み取り
+  // I2C経由でエンコーダーチップ(0x40)から読み取り
+  static uint8_t oldEncVal = 0;
+  
+  // エンコーダー値読み取り(簡易実装)
+  uint8_t reg_data[4] = {0};
+  if (M5.In_I2C.readRegister(0x40, 0x10, reg_data, 4, 400000)) {
+    int16_t newEncVal = (int16_t)((reg_data[2] << 8) | reg_data[3]);
+    encoderDelta = newEncVal - encoderValue;
+    encoderValue = newEncVal;
+  } else {
+    encoderDelta = 0;
+  }
   
   if (encoderDelta != 0) {
     lastInteractionTime = millis();
