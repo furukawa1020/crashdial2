@@ -245,44 +245,12 @@ void playStateSound(GlassState state) {
 
 // ========== 描画 ==========
 void renderGlass() {
+  // 黒背景のみ
   M5Dial.Display.fillScreen(TFT_BLACK);
   
-  // 全画面に状態による背景効果
-  uint16_t bgColor = getStateColor();
-  if (bgColor != TFT_BLACK) {
-    int alpha = (int)(destructionLevel * 100);
-    // 全画面を薄く塗る
-    M5Dial.Display.fillScreen(bgColor);
-    // 暗めに戻す
-    for (int y = 0; y < SCREEN_HEIGHT; y += 4) {
-      for (int x = 0; x < SCREEN_WIDTH; x += 4) {
-        if (random(0, 100) > alpha) {
-          M5Dial.Display.fillRect(x, y, 4, 4, TFT_BLACK);
-        }
-      }
-    }
-  }
-  
-  // ひび割れ描画 - 全画面
+  // ひび割れ描画 - 白い細い線
   for (auto& crack : cracks) {
-    uint16_t color = TFT_WHITE;
-    if (currentState == SILENCE) color = TFT_DARKGREY;
-    else if (currentState == HEAVY_SHATTER) color = TFT_RED;
-    M5Dial.Display.drawLine((int)crack.x1, (int)crack.y1, (int)crack.x2, (int)crack.y2, color);
-  }
-  
-  // パーティクル更新と描画 - 全画面
-  for (int i = particles.size() - 1; i >= 0; i--) {
-    particles[i].update();
-    if (!particles[i].isAlive()) {
-      particles.erase(particles.begin() + i);
-    } else {
-      int x = (int)particles[i].x;
-      int y = (int)particles[i].y;
-      if (x >= 0 && x < SCREEN_WIDTH && y >= 0 && y < SCREEN_HEIGHT) {
-        M5Dial.Display.fillCircle(x, y, 2, TFT_WHITE); // 少し大きく
-      }
-    }
+    M5Dial.Display.drawLine((int)crack.x1, (int)crack.y1, (int)crack.x2, (int)crack.y2, TFT_WHITE);
   }
   
   // 破壊レベル表示
@@ -301,8 +269,6 @@ void renderGlass() {
   const char* s_shatter = "SHATTER";
   const char* s_heavy = "HEAVY_SHATTER";
   const char* s_silence = "SILENCE";
-  const char* s_rebuild = "REBUILD";
-  const char* s_recovery = "RECOVERY";
   
   switch (currentState) {
     case NORMAL: stateName = s_normal; break;
@@ -313,8 +279,6 @@ void renderGlass() {
     case SHATTER: stateName = s_shatter; break;
     case HEAVY_SHATTER: stateName = s_heavy; break;
     case SILENCE: stateName = s_silence; break;
-    case REBUILD: stateName = s_rebuild; break;
-    case RECOVERY: stateName = s_recovery; break;
   }
   
   if (stateName) {
@@ -325,16 +289,6 @@ void renderGlass() {
 
 // ========== 状態色取得 ==========
 uint16_t getStateColor() {
-  switch (currentState) {
-    case TINY_CRACK: return M5Dial.Display.color565(20, 20, 40);
-    case SMALL_CRACK: return M5Dial.Display.color565(30, 30, 50);
-    case CRACK: return M5Dial.Display.color565(40, 40, 60);
-    case BIG_CRACK: return M5Dial.Display.color565(60, 30, 30);
-    case SHATTER: return M5Dial.Display.color565(80, 20, 20);
-    case HEAVY_SHATTER: return M5Dial.Display.color565(120, 10, 10);
-    case SILENCE: return M5Dial.Display.color565(20, 20, 20);
-    case REBUILD: return M5Dial.Display.color565(20, 60, 40);
-    case RECOVERY: return M5Dial.Display.color565(40, 80, 60);
-    default: return TFT_BLACK;
-  }
+  // 使わない - 常に黒背景
+  return TFT_BLACK;
 }
