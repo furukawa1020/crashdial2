@@ -7,17 +7,12 @@
 void setup() {
   // シリアル初期化
   Serial.begin(115200);
-  delay(1000);
-  Serial.println("=== M5Dial Test Starting ===");
+  delay(2000);
+  Serial.println("=== M5Dial MINIMAL Test ===");
   
-  // M5Dial初期化
-  auto cfg = M5.config();
-  cfg.clear_display = true;  // 起動時に画面クリア
-  cfg.internal_imu = false;  // IMU無効化
-  cfg.external_imu = false;  // 外部IMU無効化
-  
+  // M5Dial初期化 - 最小限の設定
   Serial.println("Calling M5.begin()...");
-  M5.begin(cfg);
+  M5.begin();  // デフォルト設定で起動
   Serial.println("M5.begin() completed");
   
   // ディスプレイ設定
