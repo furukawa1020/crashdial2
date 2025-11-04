@@ -122,6 +122,11 @@ void setup() {
   auto cfg = M5.config();
   M5.begin(cfg);
   
+  // シリアル初期化（デバッグ用）
+  Serial.begin(115200);
+  delay(500);
+  Serial.println("GlassDial - Starting...");
+  
   // ディスプレイ設定
   M5.Display.setRotation(0);
   M5.Display.setBrightness(200);
@@ -139,12 +144,12 @@ void setup() {
   
   // 初期化完了音
   playSound(FREQ_RECOVERY, 100);
+  delay(150);
   
   lastUpdateTime = millis();
   lastInteractionTime = millis();
   stateStartTime = millis();
   
-  Serial.begin(115200);
   Serial.println("GlassDial - Initialized");
 }
 
@@ -182,15 +187,25 @@ void loop() {
 void updateEncoder() {
   // M5Dialのロータリーエンコーダー読み取り
   // I2C経由でエンコーダーチップ(0x40)から読み取り
-  static uint8_t oldEncVal = 0;
   
-  // エンコーダー値読み取り(簡易実装)
+  // エンコーダー値読み取り（安全な実装）
   uint8_t reg_data[4] = {0};
+  
+  // I2C通信でエンコーダーの値を取得
+  // M5Dialのエンコーダーは0x40アドレス、レジスタ0x10から4バイト読み取り
+  bool success = false;
+  
+  // I2C通信を安全に実行
   if (M5.In_I2C.readRegister(0x40, 0x10, reg_data, 4, 400000)) {
+    // ビッグエンディアンで2バイト目と3バイト目を結合
     int16_t newEncVal = (int16_t)((reg_data[2] << 8) | reg_data[3]);
     encoderDelta = newEncVal - encoderValue;
     encoderValue = newEncVal;
-  } else {
+    success = true;
+  }
+  
+  // I2C通信が失敗した場合はエンコーダー変化なしとする
+  if (!success) {
     encoderDelta = 0;
   }
   
