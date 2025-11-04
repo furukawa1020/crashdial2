@@ -117,20 +117,22 @@ void loop() {
   long currentEncoder = M5Dial.Encoder.read();
   long delta = currentEncoder - lastEncoderValue;
   
-  if (delta > 0) {
-    // 正回転:破壊
-    destructionLevel += delta * DESTRUCTION_INCREMENT;
-    if (destructionLevel > 1.0f) destructionLevel = 1.0f;
-  } else if (delta < 0) {
-    // 逆回転:復元
-    destructionLevel += delta * RECOVERY_SPEED; // deltaは負なので減る
-    if (destructionLevel < 0.0f) {
-      destructionLevel = 0.0f;
-      cracks.clear();
+  if (delta != 0) {
+    if (delta > 0) {
+      // 正回転:破壊
+      destructionLevel += delta * DESTRUCTION_INCREMENT;
+      if (destructionLevel > 1.0f) destructionLevel = 1.0f;
+    } else {
+      // 逆回転:復元 (deltaは負の値)
+      destructionLevel -= abs(delta) * RECOVERY_SPEED; // 絶対値で減らす
+      if (destructionLevel < 0.0f) {
+        destructionLevel = 0.0f;
+        cracks.clear();
+      }
     }
+    
+    lastEncoderValue = currentEncoder;
   }
-  
-  lastEncoderValue = currentEncoder;
   
   // 状態更新
   updateState();
@@ -171,9 +173,9 @@ void updateState() {
   }
   
   // ひび割れ状態では常にランダムにピシッピシッと追加
-  if (currentState >= TINY_CRACK && currentState <= BIG_CRACK && cracks.size() < MAX_CRACKS) {
-    // 回転するたびにランダムな位置にひび追加
-    if (random(0, 100) > 50) { // 50%の確率でピシッ
+  if (currentState >= TINY_CRACK && currentState <= HEAVY_SHATTER && cracks.size() < MAX_CRACKS) {
+    // 回転するたびに高確率でピシッ
+    if (random(0, 100) > 20) { // 80%の確率でピシッ!
       float randX = random(0, SCREEN_WIDTH);
       float randY = random(0, SCREEN_HEIGHT);
       float randAngle = random(0, 628) / 100.0f;
@@ -181,12 +183,12 @@ void updateState() {
     }
   }
   
-  // 既存のひびから分岐
+  // 既存のひびから分岐 - もっと積極的に
   if (currentState >= CRACK && currentState <= HEAVY_SHATTER && cracks.size() < MAX_CRACKS) {
-    if (cracks.size() > 0 && random(0, 100) > 70) {
+    if (cracks.size() > 0 && random(0, 100) > 50) { // 50%の確率
       int idx = random(0, cracks.size());
       Crack& c = cracks[idx];
-      if (c.generation < 5) { // 5世代まで
+      if (c.generation < 6) { // 6世代まで
         float midX = (c.x1 + c.x2) / 2.0f;
         float midY = (c.y1 + c.y2) / 2.0f;
         float angle = atan2(c.y2 - c.y1, c.x2 - c.x1) + random(-157, 157) / 100.0f;
