@@ -104,8 +104,8 @@ void setup() {
   
   const char* title = "GlassDial";
   const char* subtitle = "Rotate to break";
-  M5Dial.Display.drawString(title, SCREEN_CENTER_X, SCREEN_CENTER_Y - 20);
-  M5Dial.Display.drawString(subtitle, SCREEN_CENTER_X, SCREEN_CENTER_Y + 20);
+  M5Dial.Display.drawString(title, 120, 100);
+  M5Dial.Display.drawString(subtitle, 120, 140);
   
   delay(2000);
   lastActivityTime = millis();
