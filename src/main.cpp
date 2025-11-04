@@ -118,8 +118,13 @@ void autoRecover();
 // Setup
 // ========================================
 void setup() {
-  // M5Dial初期化
+  // M5Dial初期化 - 安全な設定で起動
   auto cfg = M5.config();
+  
+  // I2C設定を明示的に指定
+  cfg.internal_imu = false;  // IMU無効化
+  cfg.external_imu = false;  // 外部IMU無効化
+  
   M5.begin(cfg);
   
   // シリアル初期化（デバッグ用）
@@ -131,14 +136,17 @@ void setup() {
   M5.Display.setRotation(0);
   M5.Display.setBrightness(200);
   M5.Display.fillScreen(TFT_BLACK);
+  Serial.println("Display OK");
   
   // スピーカー初期化
   M5.Speaker.begin();
   M5.Speaker.setVolume(128);
+  Serial.println("Speaker OK");
   
   // エンコーダー初期化（M5Dialのロータリーエンコーダー用変数）
   encoderValue = 0;
   lastEncoderValue = 0;
+  Serial.println("Encoder OK");
   
   // 触覚モーター初期化（M5Dialは内蔵）
   
@@ -150,7 +158,7 @@ void setup() {
   lastInteractionTime = millis();
   stateStartTime = millis();
   
-  Serial.println("GlassDial - Initialized");
+  Serial.println("GlassDial - Initialized!");
 }
 
 // ========================================
